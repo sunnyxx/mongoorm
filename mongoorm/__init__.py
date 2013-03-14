@@ -1,9 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# author: sunnyxx
+from datetime import datetime
+
+from tornado import ioloop,gen
+
 from mongoorm.document import Document
 from mongoorm.field import BoolField, IntField, FloatField, StringField, EmailField, DateTimeField, ObjectIdField
-from datetime import datetime
-from tornado import ioloop,gen
+from mongoorm.motorworker import MotorWorker
 
 class User(Document):
 
@@ -16,48 +20,47 @@ class User(Document):
 	weight = FloatField()
 	email = EmailField(unique=True, required=True)
 
-	# config = {
-	# 	'host':'localhost',
-	# 	'port':27017,
-	# 	'dbname':'db1',
-	# 	'collection':'user',
-
-	# 	'worker':MotorWorker,
-	# 	'max_pool_size':20,
-	# }
 	config = {
-		'dbname':'db1',
-		'collection':'user'
+		'dbname':"your db's name",
+		'collection':"this collection's name",
+		#optional
+		'host':'localhost',
+		'port':27017,
+		'worker':MotorWorker,
+		'max_pool_size':20,
 	}
-@gen.engine
 def test():
-	# user = User(email='123@11.con')
-	# user.name = '1234'
-	# user.age = 20
-	# user.is_married = False
-	# user.weight = 10.0
-	# user.email = '1231@1223.com'
-	# user.birthday = datetime.now()
 	user = User(
 		name='sunnyxx',
 		age=20,
 		is_married=False,
-		email='https://github.com/sunnyxx',
+		email='sunyuan1713@sina.com',
 		birthday = datetime.now()
 	)
-	yield gen.Task(user.insert)
-	user = yield gen.Task(user.find1, count=2)
-	print user
-	user.weight = 10.0
-	yield gen.Task(user.update, age=30)
-	yield gen.Task(user.remove)
-	print 'after test'
+	# or
+	# user = User()
+	# user.name = 'sunnyxx'
+	# user.age = 20
+	# ...
 
+	#insert
+	yield gen.Task(user.insert)
+	#find
+	users = yield gen.Task(User.find, count=2)
+	print users
+	#find1
+	user = yield gen.Task(User.find1)
+	print user
+	#update
+	user.weight = 100.0
+	yield gen.Task(user.update)
+	print user
+	#update or
+	yield gen.Task(user.update, weight=200.0)
+	print user
+	#remove
+	yield gen.Task(user.remove)	
 
 if __name__ == '__main__':
-	
 	test()
 	ioloop.IOLoop.instance().start()
-
-
-

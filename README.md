@@ -1,11 +1,13 @@
 mongoorm
-========
+
+================
 Async Mongodb ORM under tornado framework, using 'motor' for default implement
+================
 
 Dependencies
 -----------
-*tornado
-*motor(default implement)
+* tornado
+* motor(default implement)
 
 Install
 -----------
@@ -30,16 +32,13 @@ Usage
 		email = EmailField(unique=True, required=True)
 
 		config = {
-			#necessary:
 			'dbname':"your db's name",
 			'collection':"this collection's name",
 			#optional
-			'host':'localhost',#default
-			'port':27017,#default
-			'worker':MotorWorker,#default
-			#optional(will pass on to implement class)
-			'max_pool_size':20,#default
-			#'other_key':'other value'
+			'host':'localhost',
+			'port':27017,
+			'worker':MotorWorker,
+			'max_pool_size':20,
 		}
 	def test():
 		user = User(

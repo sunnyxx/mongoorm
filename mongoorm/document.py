@@ -123,7 +123,7 @@ class Document(object):
 	def get_dict(self):
 		doc = {}
 		for fieldname, field in self.fields.iteritems():
-			if field.value:
+			if field.value is not None:
 				doc[fieldname] = field.value
 		return doc
 

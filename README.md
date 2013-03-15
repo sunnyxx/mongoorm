@@ -14,6 +14,7 @@ Install
 
 Usage
 -----------
+```python
 	#!/usr/bin/python
 	# -*- coding: utf-8 -*-
 	# author: sunnyxx
@@ -81,7 +82,7 @@ Usage
 		test()
 		ioloop.IOLoop.instance().start()
 
-
+```
 Auth
 ------------
 	sunnyxx

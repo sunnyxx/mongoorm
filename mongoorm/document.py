@@ -115,9 +115,7 @@ class Document(object):
 	@engine
 	def find1(cls, query=None, callback=None):
 		doc = yield Task(cls._get_worker().find1, query)
-		print doc
 		obj = cls(**doc) if doc is not None else None
-		print obj._id
 		callback(obj)
 
 	''' Helpers

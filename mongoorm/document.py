@@ -85,7 +85,7 @@ class Document(object):
 		#unique check
 		yield Task(self._check_unique)
 		#generate doc
-		doc = self._get_field_dict()
+		doc = self.get_dict()
 		#insert
 		error = yield Task(self._get_worker().insert, doc)
 		callback(error)
@@ -94,13 +94,14 @@ class Document(object):
 	def update(self, callback=None, **kwargs):
 		if kwargs:
 			self._set_value_with_kwargs(**kwargs)
-		doc = self._get_field_dict()
-		error = yield Task(self._get_worker().update, doc)
+		doc = self.get_dict()
+		print self._id
+		error = yield Task(self._get_worker().update, {'_id':self._id}, doc)
 		callback(error)
 
 	@engine
 	def remove(self, callback=None):
-		error = yield Task(self._get_worker().remove)
+		error = yield Task(self._get_worker().remove, {'_id':self._id})
 		callback(error)
 
 	@classmethod
@@ -114,11 +115,20 @@ class Document(object):
 	@engine
 	def find1(cls, query=None, callback=None):
 		doc = yield Task(cls._get_worker().find1, query)
+		print doc
 		obj = cls(**doc) if doc is not None else None
+		print obj._id
 		callback(obj)
 
 	''' Helpers
 	'''
+	def get_dict(self):
+		doc = {}
+		for fieldname, field in self.fields.iteritems():
+			if field.value:
+				doc[fieldname] = field.value
+		return doc
+
 	@engine
 	def _check_unique(self, callback):
 		for fieldname, field in self.fields.iteritems():
@@ -146,7 +156,6 @@ class Document(object):
 			if filter(lambda key:key is None, config.itervalues()):
 				raise ValueError('value of some key in config is None and not in default')
 
-			# worker_config = cls.__dict__['worker'] if 'worker' in cls.__dict__ else None
 			worker_class = config.pop('worker')
 			if not issubclass(worker_class, Worker) or worker_class is Worker:
 				raise TypeError(repr(worker_class) + ' is not subclass of Worker')
@@ -155,19 +164,10 @@ class Document(object):
 
 		return cls.worker
 
-	def _get_field_dict(self):
-		doc = {}
-		for fieldname, field in self.fields.iteritems():
-			if field.value:
-				#doc[fieldname] = tuple(field.datatype)[0](field.value)
-				doc[fieldname] = field.value
-		return doc
-
 	def _set_value_with_kwargs(self, **kwargs):
 		for key, value in kwargs.iteritems():
 			if key in self.fields.iterkeys():
-				if key != '_id':
-					self.fields[key].__set__(self, value)
+				self.fields[key].__set__(self, value)
 			else:
 				raise KeyError('key: <'+key+'> is not defined in '+repr(self.__class__))
 

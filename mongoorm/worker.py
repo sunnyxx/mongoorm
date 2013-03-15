@@ -16,14 +16,14 @@ class Worker(object):
 	def insert(self, data, callback=None):
 		raise NotImplementedError
 	@engine
-	def update(self, data, callback=None):
+	def update(self, spec, data, callback=None):
 		raise NotImplementedError
 	@engine
-	def remove(self, query, callback=None):
+	def remove(self, spec, callback=None):
 		raise NotImplementedError
 	@engine
-	def find(self, query, count=None, callback=None):
+	def find(self, spec, count=None, callback=None):
 		raise NotImplementedError
 	@engine
-	def find1(self, query, callback=None):
+	def find1(self, spec, callback=None):
 		raise NotImplementedError

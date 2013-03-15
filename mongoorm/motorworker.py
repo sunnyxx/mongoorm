@@ -21,22 +21,22 @@ class MotorWorker(Worker):
 		error = yield motor.Op(self.collection.insert, data)
 		callback(error)
 	@engine
-	def update(self, data, callback=None):
-		error = yield motor.Op(self.collection.insert, data)
+	def update(self, spec, data, callback=None):
+		error = yield motor.Op(self.collection.update, spec, data)
 		callback(error)
 	@engine
-	def remove(self, callback=None):
-		error = yield motor.Op(self.collection.remove)
+	def remove(self, spec, callback=None):
+		error = yield motor.Op(self.collection.remove, spec)
 		callback(error)		
 	@engine
-	def find(self, query=None, count=0, callback=None):
-		cursor = self.collection.find(query).limit(count)
+	def find(self, spec=None, count=0, callback=None):
+		cursor = self.collection.find(spec).limit(count)
 		docs = yield motor.Op(cursor.to_list)
 		callback(docs)
 
 	@engine
-	def find1(self, query=None, callback=None):
-		doc = yield motor.Op(self.collection.find_one, query)
+	def find1(self, spec=None, callback=None):
+		doc = yield motor.Op(self.collection.find_one, spec)
 		callback(doc)
 
 		

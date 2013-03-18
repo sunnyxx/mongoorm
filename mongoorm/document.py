@@ -53,16 +53,24 @@ class Document(object):
 		'max_pool_size':20,
 	}
 	worker = None
+	fields = {}
 
 	def __new__(cls, **kwargs):
-		return super(Document, cls).__new__(cls, **kwargs)
+
+		obj =  super(Document, cls).__new__(cls, **kwargs)
+
+		for fieldname, field in cls.__dict__.iteritems():
+			if isinstance(field, BaseField):
+				field.name = fieldname
+				cls.fields[fieldname] = field
+
+		#set `items` dict into obj, store concrete key/value
+		setattr(obj, 'items', {})
+
+		return obj
 
 	def __init__(self, **kwargs):
-		#find all fields
-		self.fields = {}
-		for fieldname, field in self.__class__.__dict__.iteritems():
-			if isinstance(field, BaseField):
-				self.fields[fieldname] = field
+
 		#init value `kwargs` passed in
 		if kwargs:
 			self._set_value_with_kwargs(**kwargs)
@@ -70,7 +78,7 @@ class Document(object):
 	def __repr__(self):
 		representation = super(Document, self).__repr__()[:-1]
 		for fieldname, field in self.fields.iteritems():
-			representation += ('|'+fieldname+':'+repr(field.value))
+			representation += ('|'+fieldname+':'+repr(self.items.get(fieldname)))
 		return representation + '>'
 
 	''' Mongodb operation jobs.
@@ -84,19 +92,15 @@ class Document(object):
 		self._check_required()
 		#unique check
 		yield Task(self._check_unique)
-		#generate doc
-		doc = self.get_dict()
 		#insert
-		error = yield Task(self._get_worker().insert, doc)
+		error = yield Task(self._get_worker().insert, self.items)
 		callback(error)
 
 	@engine
 	def update(self, callback=None, **kwargs):
 		if kwargs:
 			self._set_value_with_kwargs(**kwargs)
-		doc = self.get_dict()
-		print self._id
-		error = yield Task(self._get_worker().update, {'_id':self._id}, doc)
+		error = yield Task(self._get_worker().update, {'_id':self._id}, self.items)
 		callback(error)
 
 	@engine
@@ -120,18 +124,12 @@ class Document(object):
 
 	''' Helpers
 	'''
-	def get_dict(self):
-		doc = {}
-		for fieldname, field in self.fields.iteritems():
-			if field.value is not None:
-				doc[fieldname] = field.value
-		return doc
 
 	@engine
 	def _check_unique(self, callback):
 		for fieldname, field in self.fields.iteritems():
 			if field.unique:
-				pre_find = yield Task(self.find1, {fieldname:field.value})
+				pre_find = yield Task(self.find1, {fieldname:self.items[fieldname]})
 				if pre_find:
 					raise ValueError(repr(self.__class__)+'|{'+fieldname+':'+repr(field.value)+'}'+' IS NOT UNIQUE')
 
@@ -139,7 +137,7 @@ class Document(object):
 
 	def _check_required(self):
 		for fieldname, field in self.fields.iteritems():
-			if field.required and not field.value:
+			if field.required and not self.items[fieldname]:
 				raise Exception(repr(self.__class__)+':FIELD <'+fieldname+'> IS REQUIRED BUT NONE')
 
 	@classmethod
@@ -164,7 +162,7 @@ class Document(object):
 
 	def _set_value_with_kwargs(self, **kwargs):
 		for key, value in kwargs.iteritems():
-			if key in self.fields.iterkeys():
+			if key in self.__class__.fields.iterkeys():
 				self.fields[key].__set__(self, value)
 			else:
 				raise KeyError('key: <'+key+'> is not defined in '+repr(self.__class__))

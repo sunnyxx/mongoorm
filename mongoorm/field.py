@@ -13,24 +13,24 @@ class BaseField(object):
 	def __init__(self, required=False, unique=False):
 		self.required = required
 		self.unique = unique
-		self.value = None
+		self.name = None
 
 	''' Using descriptor to set/get `value` property'''
 	def __get__(self, obj, type=None):
-		return self.value
+		return obj.items.get(self.name)
+
 	def __set__(self, obj, value):
-		self.value = value
-		self.validate()
+		self.validate(value)
+		obj.items[self.name] = value
 
 	''' Abstract method for value validating.
 	Called when `Document().xxx = value` called
 	'''
-	def validate(self):
-		if not self.value:
-			return
+	def validate(self, value):
+		pass
 
-	def _raise_type_error(self):
-		raise TypeError(str(self.__class__.__name__)+' NOT MATCHES VALUE:'+repr(self.value))
+	def _raise_type_error(self, value):
+		raise TypeError(str(self.__class__.__name__)+' NOT MATCHES VALUE:'+repr(value))
 
 class BaseTypeField(BaseField):
 
@@ -38,10 +38,10 @@ class BaseTypeField(BaseField):
 		super(BaseTypeField, self).__init__(**kwargs)
 		self.datatype = datatype
 
-	def validate(self):
-		super(BaseTypeField, self).validate()
-		if not isinstance(self.value, self.datatype):
-			self._raise_type_error()
+	def validate(self, value):
+		super(BaseTypeField, self).validate(value)
+		if not isinstance(value, self.datatype):
+			self._raise_type_error(value)
 
 #simple types
 class BoolField(BaseTypeField):
@@ -65,8 +65,8 @@ class ObjectIdField(BaseTypeField):
 
 #email
 class EmailField(StringField):
-	def validate(self):
-		super(EmailField, self).validate()
+	def validate(self, value):
+		super(EmailField, self).validate(value)
 		regex = re.compile(
 		    r"(^[-!#$%&'*+/=?^_`{}|~0-9A-Z]+(\.[-!#$%&'*+/=?^_`{}|~0-9A-Z]+)*"  # dot-atom
 		    # quoted-string, see also http://tools.ietf.org/html/rfc2822#section-3.2.5
@@ -74,8 +74,8 @@ class EmailField(StringField):
 		    r')@((?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?$)'  # domain
 		    r'|\[(25[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}\]$', re.IGNORECASE 
 		)
-		if not re.match(regex, self.value):
-			self._raise_type_error()
+		if not re.match(regex, value):
+			self._raise_type_error(value)
 
 #nested types
 class ListField(BaseTypeField):
